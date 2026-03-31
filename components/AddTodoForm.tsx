@@ -7,10 +7,10 @@ interface Props {
   onAdd: (text: string, deadline: string | null, priority: Priority) => Promise<void>;
 }
 
-const PRIORITIES: { value: Priority; label: string; color: string }[] = [
-  { value: 'high',   label: 'High',   color: 'var(--priority-high)' },
-  { value: 'medium', label: 'Med',    color: 'var(--priority-medium)' },
-  { value: 'low',    label: 'Low',    color: 'var(--priority-low)' },
+const PRIORITIES: { value: Priority; letter: string; label: string; color: string }[] = [
+  { value: 'high',   letter: 'H', label: 'High',   color: 'var(--priority-high)' },
+  { value: 'medium', letter: 'M', label: 'Medium', color: 'var(--priority-medium)' },
+  { value: 'low',    letter: 'L', label: 'Low',    color: 'var(--priority-low)' },
 ];
 
 export default function AddTodoForm({ onAdd }: Props) {
@@ -54,23 +54,30 @@ export default function AddTodoForm({ onAdd }: Props) {
       />
 
       <div className="flex items-center gap-2 flex-wrap">
-        {/* Priority pills */}
-        <div className="flex gap-1">
-          {PRIORITIES.map((p) => (
-            <button
-              key={p.value}
-              type="button"
-              onClick={() => setPriority(p.value)}
-              className="px-2.5 py-1 rounded-full text-xs font-medium transition-all"
-              style={{
-                background: priority === p.value ? p.color : 'transparent',
-                color: priority === p.value ? 'white' : 'var(--text-muted)',
-                border: `1px solid ${priority === p.value ? p.color : 'var(--border)'}`,
-              }}
-            >
-              {p.label}
-            </button>
-          ))}
+        {/* Priority circles */}
+        <div className="flex gap-2 items-center">
+          {PRIORITIES.map((p) => {
+            const selected = priority === p.value;
+            return (
+              <button
+                key={p.value}
+                type="button"
+                onClick={() => setPriority(p.value)}
+                title={p.label}
+                className="flex items-center justify-center rounded-full text-xs font-bold transition-all"
+                style={{
+                  width: '26px',
+                  height: '26px',
+                  background: selected ? p.color : `${p.color}22`,
+                  color: selected ? 'white' : p.color,
+                  outline: selected ? `2px solid ${p.color}` : '2px solid transparent',
+                  outlineOffset: '2px',
+                }}
+              >
+                {p.letter}
+              </button>
+            );
+          })}
         </div>
 
         {/* Date */}
