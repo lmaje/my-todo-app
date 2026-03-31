@@ -1,4 +1,4 @@
-import { createAuthServerClient } from '@/lib/supabase';
+import { createAuthServerClient } from '@/lib/supabase-server';
 import { redirect } from 'next/navigation';
 import TodoApp from '@/components/TodoApp';
 import type { Todo } from '@/lib/types';
