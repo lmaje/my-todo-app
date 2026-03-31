@@ -20,9 +20,12 @@ export default function TodoApp({ initialTodos, userEmail }: Props) {
   const [filter, setFilter] = useState<FilterStatus>('all');
   const router = useRouter();
 
+  const today = new Date().toISOString().split('T')[0];
+
   const filteredTodos = todos.filter((t) => {
     if (filter === 'active') return !t.completed;
     if (filter === 'completed') return t.completed;
+    if (filter === 'today') return !t.completed && t.deadline !== null && t.deadline <= today;
     return true;
   });
 
@@ -30,6 +33,7 @@ export default function TodoApp({ initialTodos, userEmail }: Props) {
     all: todos.length,
     active: todos.filter((t) => !t.completed).length,
     completed: todos.filter((t) => t.completed).length,
+    today: todos.filter((t) => !t.completed && t.deadline !== null && t.deadline <= today).length,
   };
 
   // ── Sign out ──
@@ -101,6 +105,15 @@ export default function TodoApp({ initialTodos, userEmail }: Props) {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ priority }),
+    });
+  }, []);
+
+  const updateNotes = useCallback(async (id: string, notes: string | null) => {
+    setTodos((prev) => prev.map((t) => (t.id === id ? { ...t, notes } : t)));
+    await fetch(`/api/todos/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notes }),
     });
   }, []);
 
@@ -197,6 +210,7 @@ export default function TodoApp({ initialTodos, userEmail }: Props) {
             onEdit={editTodo}
             onDeadlineChange={updateDeadline}
             onPriorityChange={updatePriority}
+            onNotesChange={updateNotes}
             onReorder={handleReorder}
           />
         </div>

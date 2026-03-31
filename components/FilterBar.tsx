@@ -5,11 +5,12 @@ import type { FilterStatus } from '@/lib/types';
 interface Props {
   current: FilterStatus;
   onChange: (status: FilterStatus) => void;
-  counts: { all: number; active: number; completed: number };
+  counts: { all: number; active: number; completed: number; today: number };
 }
 
 const FILTERS: { label: string; value: FilterStatus }[] = [
   { label: 'All',       value: 'all' },
+  { label: 'Today',     value: 'today' },
   { label: 'Active',    value: 'active' },
   { label: 'Completed', value: 'completed' },
 ];

@@ -7,10 +7,11 @@ export interface Todo {
   deadline: string | null; // "YYYY-MM-DD"
   priority: Priority;
   sort_order: number;
+  notes: string | null;
   created_at: string;
 }
 
-export type FilterStatus = 'all' | 'active' | 'completed';
+export type FilterStatus = 'all' | 'active' | 'completed' | 'today';
 
 export interface CreateTodoPayload {
   text: string;
@@ -24,4 +25,5 @@ export interface UpdateTodoPayload {
   deadline?: string | null;
   priority?: Priority;
   sort_order?: number;
+  notes?: string | null;
 }

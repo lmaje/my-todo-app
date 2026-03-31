@@ -24,6 +24,7 @@ interface Props {
   onEdit: (id: string, text: string) => Promise<void>;
   onDeadlineChange: (id: string, deadline: string | null) => Promise<void>;
   onPriorityChange: (id: string, priority: Priority) => Promise<void>;
+  onNotesChange: (id: string, notes: string | null) => Promise<void>;
   onReorder: (activeId: string, overId: string) => void;
 }
 
@@ -34,6 +35,7 @@ export default function TodoList({
   onEdit,
   onDeadlineChange,
   onPriorityChange,
+  onNotesChange,
   onReorder,
 }: Props) {
   const sensors = useSensors(
@@ -69,6 +71,7 @@ export default function TodoList({
               onEdit={onEdit}
               onDeadlineChange={onDeadlineChange}
               onPriorityChange={onPriorityChange}
+              onNotesChange={onNotesChange}
             />
           ))}
         </ul>
