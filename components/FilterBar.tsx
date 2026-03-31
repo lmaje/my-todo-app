@@ -9,32 +9,40 @@ interface Props {
 }
 
 const FILTERS: { label: string; value: FilterStatus }[] = [
-  { label: 'All', value: 'all' },
-  { label: 'Active', value: 'active' },
+  { label: 'All',       value: 'all' },
+  { label: 'Active',    value: 'active' },
   { label: 'Completed', value: 'completed' },
 ];
 
 export default function FilterBar({ current, onChange, counts }: Props) {
   return (
-    <div className="flex gap-1 mt-6 border-b border-zinc-100">
-      {FILTERS.map(({ label, value }) => (
-        <button
-          key={value}
-          onClick={() => onChange(value)}
-          className={`px-3 py-2 text-sm font-medium transition-colors relative ${
-            current === value
-              ? 'text-zinc-900 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-zinc-900'
-              : 'text-zinc-400 hover:text-zinc-600'
-          }`}
-        >
-          {label}
-          <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
-            current === value ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-500'
-          }`}>
-            {counts[value]}
-          </span>
-        </button>
-      ))}
+    <div className="flex gap-1 mt-5">
+      {FILTERS.map(({ label, value }) => {
+        const active = current === value;
+        return (
+          <button
+            key={value}
+            onClick={() => onChange(value)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+            style={{
+              background: active ? 'var(--pill-active-bg)' : 'transparent',
+              color: active ? 'var(--pill-active-text)' : 'var(--text-muted)',
+              border: `1px solid ${active ? 'transparent' : 'var(--border)'}`,
+            }}
+          >
+            {label}
+            <span
+              className="text-[10px] px-1 rounded-full"
+              style={{
+                background: active ? 'rgba(255,255,255,0.2)' : 'var(--border)',
+                color: active ? 'var(--pill-active-text)' : 'var(--text-muted)',
+              }}
+            >
+              {counts[value]}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
