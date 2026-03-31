@@ -3,16 +3,19 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { Todo, Priority } from '@/lib/types';
+import type { Todo, Priority, Subtask } from '@/lib/types';
+import SubtaskList from './SubtaskList';
 
 interface Props {
   todo: Todo;
+  subtasks: Subtask[];
   onToggle: (id: string, completed: boolean) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onEdit: (id: string, text: string) => Promise<void>;
   onDeadlineChange: (id: string, deadline: string | null) => Promise<void>;
   onPriorityChange: (id: string, priority: Priority) => Promise<void>;
   onNotesChange: (id: string, notes: string | null) => Promise<void>;
+  onSubtasksChange: (todoId: string, subtasks: Subtask[]) => void;
 }
 
 const PRIORITY_COLORS: Record<Priority, string> = {
@@ -38,12 +41,13 @@ async function fireConfetti() {
 }
 
 export default function TodoItem({
-  todo, onToggle, onDelete, onEdit, onDeadlineChange, onPriorityChange, onNotesChange,
+  todo, subtasks, onToggle, onDelete, onEdit, onDeadlineChange, onPriorityChange, onNotesChange, onSubtasksChange,
 }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(todo.text);
   const [showPriorityMenu, setShowPriorityMenu] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
+  const [showSubtasks, setShowSubtasks] = useState(false);
   const [notesText, setNotesText] = useState(todo.notes ?? '');
   const inputRef = useRef<HTMLInputElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
@@ -235,6 +239,23 @@ export default function TodoItem({
                   <span className="text-[10px]">note</span>
                 )}
               </button>
+
+              {/* Subtasks toggle */}
+              <button
+                onClick={() => setShowSubtasks(!showSubtasks)}
+                className="flex items-center gap-1 text-[11px] transition-opacity hover:opacity-80"
+                style={{ color: subtasks.length > 0 ? 'var(--accent)' : 'var(--text-muted)' }}
+                title="Subtasks"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" d="M4 3h6M4 6h6M4 9h6M1.5 3h.01M1.5 6h.01M1.5 9h.01" />
+                </svg>
+                {subtasks.length > 0 && (
+                  <span className="text-[10px]">
+                    {subtasks.filter(s => s.completed).length}/{subtasks.length}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
 
@@ -264,12 +285,18 @@ export default function TodoItem({
               placeholder="Add a note..."
               rows={2}
               className="w-full text-xs outline-none bg-transparent resize-none pt-2"
-              style={{
-                color: 'var(--text-secondary)',
-                caretColor: 'var(--accent)',
-              }}
+              style={{ color: 'var(--text-secondary)', caretColor: 'var(--accent)' }}
             />
           </div>
+        )}
+
+        {/* Subtasks panel */}
+        {showSubtasks && (
+          <SubtaskList
+            todoId={todo.id}
+            subtasks={subtasks}
+            onSubtasksChange={onSubtasksChange}
+          />
         )}
       </div>
     </li>
