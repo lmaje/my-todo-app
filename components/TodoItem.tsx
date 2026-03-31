@@ -150,17 +150,21 @@ export default function TodoItem({ todo, onToggle, onDelete, onEdit, onDeadlineC
 
           {/* Deadline + priority badge row */}
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-            {/* Priority menu */}
+            {/* Priority circle */}
             <div className="relative">
               <button
                 onClick={() => setShowPriorityMenu(!showPriorityMenu)}
-                className="flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full transition-opacity hover:opacity-80"
+                title={todo.priority}
+                className="flex items-center justify-center rounded-full text-[11px] font-bold transition-all hover:opacity-80"
                 style={{
-                  background: `${priorityColor}20`,
+                  width: '22px',
+                  height: '22px',
+                  background: `${priorityColor}25`,
                   color: priorityColor,
+                  border: `1.5px solid ${priorityColor}`,
                 }}
               >
-                <span>{PRIORITY_LABELS[todo.priority]}</span>
+                {PRIORITY_LABELS[todo.priority]}
               </button>
               {showPriorityMenu && (
                 <div
