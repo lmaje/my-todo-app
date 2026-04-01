@@ -10,39 +10,62 @@ interface Props {
 }
 
 export default function BadgeToast({ badges, xpGained, onDismiss }: Props) {
-  const [visible, setVisible] = useState(true);
+  const [hiding, setHiding] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => { setVisible(false); setTimeout(onDismiss, 300); }, 4000);
+    const t = setTimeout(() => {
+      setHiding(true);
+      setTimeout(onDismiss, 350);
+    }, 4000);
     return () => clearTimeout(t);
   }, [onDismiss]);
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"
-      style={{ transition: 'opacity 0.3s', opacity: visible ? 1 : 0 }}
+      className="fixed bottom-6 right-6 z-50 flex flex-col gap-2"
+      style={{
+        transition: 'opacity 0.35s ease, transform 0.35s ease',
+        opacity: hiding ? 0 : 1,
+        transform: hiding ? 'translateY(8px)' : 'translateY(0)',
+      }}
     >
-      {/* XP gained toast */}
+      {/* XP pill */}
       <div
-        className="flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg text-sm font-medium pointer-events-auto"
-        style={{ background: 'var(--text-primary)', color: 'var(--bg)' }}
+        className="self-end flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold animate-toast-in"
+        style={{
+          background: 'var(--accent)',
+          color: 'white',
+          boxShadow: '0 4px 14px rgba(194,98,42,0.4)',
+        }}
       >
-        <span style={{ color: 'var(--accent)' }}>⚡</span>
+        <span>⚡</span>
         <span>+{xpGained} XP</span>
       </div>
 
-      {/* Badge toasts */}
-      {badges.map((badge) => (
+      {/* Badge cards */}
+      {badges.map((badge, i) => (
         <div
           key={badge.id}
-          className="flex items-center gap-3 px-4 py-2.5 rounded-xl shadow-lg pointer-events-auto"
-          style={{ background: 'var(--bg-card)', border: '1px solid var(--accent)', color: 'var(--text-primary)' }}
+          className="flex items-center gap-3 px-4 py-3 rounded-2xl animate-toast-in"
+          style={{
+            animationDelay: `${i * 0.08}s`,
+            background: 'var(--bg-card)',
+            border: '1.5px solid var(--border-focus)',
+            boxShadow: 'var(--shadow-toast)',
+            minWidth: '220px',
+          }}
         >
-          <span className="text-xl">{badge.icon}</span>
+          <span className="text-2xl">{badge.icon}</span>
           <div>
-            <p className="text-xs font-bold" style={{ color: 'var(--accent)' }}>Badge Unlocked!</p>
-            <p className="text-sm font-semibold">{badge.label}</p>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{badge.description}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--accent)' }}>
+              Badge Unlocked
+            </p>
+            <p className="text-sm font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
+              {badge.label}
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              {badge.description}
+            </p>
           </div>
         </div>
       ))}

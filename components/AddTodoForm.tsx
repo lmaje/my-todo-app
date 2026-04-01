@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { Priority } from '@/lib/types';
 
 interface Props {
@@ -18,6 +18,8 @@ export default function AddTodoForm({ onAdd }: Props) {
   const [deadline, setDeadline] = useState('');
   const [priority, setPriority] = useState<Priority>('medium');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,34 +30,53 @@ export default function AddTodoForm({ onAdd }: Props) {
       setText('');
       setDeadline('');
       setPriority('medium');
+      inputRef.current?.focus();
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit}
-      className="rounded-xl p-4 space-y-3"
-      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+    <form
+      onSubmit={handleSubmit}
+      className="rounded-2xl overflow-hidden transition-all duration-300"
+      style={{
+        background: 'var(--bg-card)',
+        boxShadow: focused ? 'var(--shadow-lift)' : 'var(--shadow-card)',
+        border: `1.5px solid ${focused ? 'var(--border-focus)' : 'var(--border)'}`,
+      }}
+    >
+      {/* Text row */}
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+        {/* Placeholder circle */}
+        <div
+          className="flex-shrink-0 w-4 h-4 rounded-full border-2 transition-colors"
+          style={{ borderColor: focused ? 'var(--accent)' : 'var(--border)' }}
+        />
+        <input
+          ref={inputRef}
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          placeholder="What's on your mind?"
+          disabled={isSubmitting}
+          className="flex-1 text-sm outline-none bg-transparent font-medium"
+          style={{
+            color: 'var(--text-primary)',
+            caretColor: 'var(--accent)',
+          }}
+        />
+      </div>
 
-      {/* Text input */}
-      <input
-        type="text"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="What needs to be done?"
-        disabled={isSubmitting}
-        className="w-full text-sm outline-none bg-transparent"
-        style={{
-          color: 'var(--text-primary)',
-          caretColor: 'var(--accent)',
-        }}
-        // Using a simple placeholder style approach
-      />
-
-      <div className="flex items-center gap-2 flex-wrap">
+      {/* Options row — only visible when focused or has text */}
+      <div
+        className="flex items-center gap-2 px-4 pb-3 transition-all duration-200"
+        style={{ opacity: focused || text ? 1 : 0.5 }}
+      >
         {/* Priority circles */}
-        <div className="flex gap-2 items-center">
+        <div className="flex items-center gap-1.5">
           {PRIORITIES.map((p) => {
             const selected = priority === p.value;
             return (
@@ -64,14 +85,13 @@ export default function AddTodoForm({ onAdd }: Props) {
                 type="button"
                 onClick={() => setPriority(p.value)}
                 title={p.label}
-                className="flex items-center justify-center rounded-full text-xs font-bold transition-all"
+                className="flex items-center justify-center rounded-full text-[11px] font-bold transition-all duration-150"
                 style={{
-                  width: '26px',
-                  height: '26px',
-                  background: selected ? p.color : `${p.color}22`,
+                  width: '24px', height: '24px',
+                  background: selected ? p.color : `${p.color}18`,
                   color: selected ? 'white' : p.color,
-                  outline: selected ? `2px solid ${p.color}` : '2px solid transparent',
-                  outlineOffset: '2px',
+                  transform: selected ? 'scale(1.12)' : 'scale(1)',
+                  boxShadow: selected ? `0 2px 6px ${p.color}50` : 'none',
                 }}
               >
                 {p.letter}
@@ -80,31 +100,36 @@ export default function AddTodoForm({ onAdd }: Props) {
           })}
         </div>
 
+        {/* Divider */}
+        <div className="w-px h-4 mx-1" style={{ background: 'var(--border)' }} />
+
         {/* Date */}
         <input
           type="date"
           value={deadline}
           onChange={(e) => setDeadline(e.target.value)}
           disabled={isSubmitting}
-          className="text-xs outline-none bg-transparent rounded-full px-2.5 py-1 transition-all"
+          className="text-xs outline-none bg-transparent rounded-lg px-2 py-1 transition-colors"
           style={{
             color: deadline ? 'var(--text-secondary)' : 'var(--text-muted)',
-            border: '1px solid var(--border)',
+            border: `1px solid ${deadline ? 'var(--border-focus)' : 'var(--border)'}`,
           }}
           title="Set deadline"
         />
 
-        {/* Spacer + submit */}
-        <div className="ml-auto">
-          <button
-            type="submit"
-            disabled={!text.trim() || isSubmitting}
-            className="px-4 py-1.5 rounded-full text-xs font-medium transition-all disabled:opacity-40"
-            style={{ background: 'var(--text-primary)', color: 'var(--bg)' }}
-          >
-            {isSubmitting ? '…' : 'Add'}
-          </button>
-        </div>
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={!text.trim() || isSubmitting}
+          className="ml-auto px-4 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 disabled:opacity-30"
+          style={{
+            background: text.trim() ? 'var(--accent)' : 'var(--text-primary)',
+            color: 'white',
+            transform: text.trim() ? 'scale(1)' : 'scale(0.97)',
+          }}
+        >
+          {isSubmitting ? '…' : 'Add task'}
+        </button>
       </div>
     </form>
   );
