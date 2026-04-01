@@ -179,54 +179,34 @@ export default function TodoApp({ initialTodos, initialStats, userEmail }: Props
     <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
       {/* Header */}
       <header
-        className="sticky top-0 z-20 px-5 sm:px-8 py-3.5 flex items-center justify-between gap-4"
-        style={{
-          background: 'rgba(var(--bg-rgb, 247,243,236), 0.85)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          borderBottom: '1px solid var(--border)',
-        }}
+        className="sticky top-0 z-20 px-4 sm:px-6 py-3 flex items-center justify-between gap-3"
+        style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)' }}
       >
-        {/* Logo */}
         <div className="flex items-center gap-2.5 flex-shrink-0">
-          <div
-            className="w-7 h-7 rounded-xl flex items-center justify-center"
-            style={{ background: 'var(--accent)', boxShadow: '0 2px 8px rgba(194,98,42,0.35)' }}
-          >
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="white" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 6.5l3 3 7-7" />
+          <div className="w-6 h-6 rounded-sm flex items-center justify-center" style={{ background: 'var(--accent)' }}>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M1 6l3 3 7-7" />
             </svg>
           </div>
-          <span className="font-semibold text-sm tracking-wide" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
-            Focus
-          </span>
+          <span className="font-semibold text-sm tracking-wide" style={{ color: 'var(--text-primary)' }}>Todos</span>
         </div>
 
-        {/* Stats — centred */}
+        {/* Stats in header */}
         <div className="flex-1 flex justify-center">
           <StatsBar stats={stats} />
         </div>
 
-        {/* Right actions */}
-        <div className="flex items-center gap-2.5 flex-shrink-0">
+        <div className="flex items-center gap-3 flex-shrink-0">
           <DarkModeToggle />
           {userEmail && (
-            <span className="text-xs hidden md:block truncate max-w-[120px]" style={{ color: 'var(--text-muted)' }}>
-              {userEmail}
-            </span>
+            <span className="text-xs hidden sm:block" style={{ color: 'var(--text-muted)' }}>{userEmail}</span>
           )}
           <button
             onClick={handleSignOut}
-            className="text-xs px-3 py-1.5 rounded-full font-medium transition-all duration-150"
+            className="text-xs px-3 py-1.5 rounded-full transition-all"
             style={{ color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-focus)';
-              (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)';
-              (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
-            }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--border-focus)')}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
           >
             Sign out
           </button>
@@ -234,18 +214,11 @@ export default function TodoApp({ initialTodos, initialStats, userEmail }: Props
       </header>
 
       {/* Main */}
-      <main className="max-w-[560px] mx-auto px-4 sm:px-6 pt-12 pb-24">
-        {/* Title + date */}
+      <main className="max-w-xl mx-auto px-4 pt-10 pb-20">
         <div className="mb-8 animate-fade-up afd-1">
-          <h1
-            className="text-[2.6rem] leading-none mb-1"
-            style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
-          >
+          <h1 className="text-4xl" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
             My Tasks
           </h1>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-          </p>
         </div>
 
         <div className="animate-fade-up afd-2">
