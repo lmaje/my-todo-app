@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useRouter } from 'next/navigation';
-import type { Todo, FilterStatus, Priority, Subtask, UserStats, CompleteReward } from '@/lib/types';
+import type { Todo, FilterStatus, Priority, Subtask, UserStats, CompleteReward, SharedTodoView } from '@/lib/types';
 import AddTodoForm from './AddTodoForm';
 import FilterBar from './FilterBar';
 import TodoList from './TodoList';
+import TodoItem from './TodoItem';
 import DarkModeToggle from './DarkModeToggle';
 import StatsBar from './StatsBar';
 import BadgeToast from './BadgeToast';
@@ -29,12 +30,20 @@ const DEFAULT_STATS: UserStats = {
 };
 
 export default function TodoApp({ initialTodos, initialStats, userEmail }: Props) {
-  const [todos, setTodos] = useState<Todo[]>(initialTodos);
-  const [subtaskMap, setSubtaskMap] = useState<Record<string, Subtask[]>>({});
-  const [filter, setFilter] = useState<FilterStatus>('all');
-  const [stats, setStats] = useState<UserStats>(initialStats ?? DEFAULT_STATS);
-  const [toast, setToast] = useState<Toast | null>(null);
+  const [todos,       setTodos]       = useState<Todo[]>(initialTodos);
+  const [sharedTodos, setSharedTodos] = useState<SharedTodoView[]>([]);
+  const [subtaskMap,  setSubtaskMap]  = useState<Record<string, Subtask[]>>({});
+  const [filter,      setFilter]      = useState<FilterStatus>('all');
+  const [stats,       setStats]       = useState<UserStats>(initialStats ?? DEFAULT_STATS);
+  const [toast,       setToast]       = useState<Toast | null>(null);
   const router = useRouter();
+
+  // Fetch todos shared with this user
+  useEffect(() => {
+    fetch('/api/todos/shared')
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => setSharedTodos(Array.isArray(data) ? data : []));
+  }, []);
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -243,6 +252,33 @@ export default function TodoApp({ initialTodos, initialStats, userEmail }: Props
             onReorder={handleReorder}
           />
         </div>
+
+        {/* ── Shared with me ── */}
+        {sharedTodos.length > 0 && (
+          <div className="mt-10 animate-fade-up afd-5">
+            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>
+              Shared with me
+            </p>
+            <ul className="space-y-1.5">
+              {sharedTodos.map((todo) => (
+                <TodoItem
+                  key={`shared-${todo.id}`}
+                  todo={todo}
+                  subtasks={subtaskMap[todo.id] ?? []}
+                  onToggle={toggleTodo}
+                  onDelete={async () => {}}
+                  onEdit={async () => {}}
+                  onDeadlineChange={async () => {}}
+                  onPriorityChange={async () => {}}
+                  onNotesChange={async () => {}}
+                  onSubtasksChange={() => {}}
+                  isShared
+                  sharedByEmail={todo.shared_by_email}
+                />
+              ))}
+            </ul>
+          </div>
+        )}
       </main>
 
       {/* Badge / XP toast */}

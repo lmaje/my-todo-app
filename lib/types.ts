@@ -46,6 +46,11 @@ export interface Todo {
 
 export type FilterStatus = 'all' | 'active' | 'completed' | 'today';
 
+export interface SharedTodoView extends Todo {
+  share_id: string;
+  shared_by_email: string;
+}
+
 export interface CreateTodoPayload {
   text: string;
   deadline?: string | null;
