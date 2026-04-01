@@ -70,11 +70,8 @@ export default function AddTodoForm({ onAdd }: Props) {
         />
       </div>
 
-      {/* Options row — only visible when focused or has text */}
-      <div
-        className="flex items-center gap-2 px-4 pb-3 transition-all duration-200"
-        style={{ opacity: focused || text ? 1 : 0.5 }}
-      >
+      {/* Options row — always visible */}
+      <div className="flex items-center gap-2 px-4 pb-3">
         {/* Priority circles */}
         <div className="flex items-center gap-1.5">
           {PRIORITIES.map((p) => {
@@ -87,11 +84,12 @@ export default function AddTodoForm({ onAdd }: Props) {
                 title={p.label}
                 className="flex items-center justify-center rounded-full text-[11px] font-bold transition-all duration-150"
                 style={{
-                  width: '24px', height: '24px',
-                  background: selected ? p.color : `${p.color}18`,
+                  width: '26px', height: '26px',
+                  background: selected ? p.color : `${p.color}30`,
                   color: selected ? 'white' : p.color,
+                  border: `1.5px solid ${selected ? p.color : `${p.color}60`}`,
                   transform: selected ? 'scale(1.12)' : 'scale(1)',
-                  boxShadow: selected ? `0 2px 6px ${p.color}50` : 'none',
+                  boxShadow: selected ? `0 2px 8px ${p.color}55` : 'none',
                 }}
               >
                 {p.letter}
@@ -117,14 +115,15 @@ export default function AddTodoForm({ onAdd }: Props) {
           title="Set deadline"
         />
 
-        {/* Submit */}
+        {/* Submit — always accent-colored, dims when no text */}
         <button
           type="submit"
           disabled={!text.trim() || isSubmitting}
-          className="ml-auto px-4 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 disabled:opacity-30"
+          className="ml-auto px-4 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200"
           style={{
-            background: text.trim() ? 'var(--accent)' : 'var(--text-primary)',
+            background: 'var(--accent)',
             color: 'white',
+            opacity: text.trim() ? 1 : 0.55,
             transform: text.trim() ? 'scale(1)' : 'scale(0.97)',
           }}
         >
