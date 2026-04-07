@@ -54,7 +54,10 @@ export async function POST(request: Request) {
     badges: allBadges,
   };
 
-  await supabase.from('user_stats').upsert(updatedStats);
+  await Promise.all([
+    supabase.from('user_stats').upsert(updatedStats),
+    supabase.from('completion_log').insert({ user_id: user.id, completed_at: today, priority }),
+  ]);
 
   return NextResponse.json({
     xpGained,

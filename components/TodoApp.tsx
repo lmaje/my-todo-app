@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useRouter } from 'next/navigation';
-import type { Todo, FilterStatus, Priority, Subtask, UserStats, CompleteReward, SharedTodoView } from '@/lib/types';
+import type { Todo, FilterStatus, Priority, Recurrence, Subtask, UserStats, CompleteReward, SharedTodoView } from '@/lib/types';
 import AddTodoForm from './AddTodoForm';
 import FilterBar from './FilterBar';
 import TodoList from './TodoList';
 import TodoItem from './TodoItem';
+import SearchBar from './SearchBar';
+import PomodoroTimer from './PomodoroTimer';
 import DarkModeToggle from './DarkModeToggle';
 import StatsBar from './StatsBar';
 import BadgeToast from './BadgeToast';
@@ -29,16 +31,27 @@ const DEFAULT_STATS: UserStats = {
   last_completed_date: null, total_completed: 0, badges: [],
 };
 
+function getNextDeadline(todo: Todo): string {
+  const base = todo.deadline ?? new Date().toISOString().split('T')[0];
+  const d = new Date(base + 'T00:00:00');
+  if (todo.recurrence === 'daily')   d.setDate(d.getDate() + 1);
+  if (todo.recurrence === 'weekly')  d.setDate(d.getDate() + 7);
+  if (todo.recurrence === 'monthly') d.setMonth(d.getMonth() + 1);
+  return d.toISOString().split('T')[0];
+}
+
 export default function TodoApp({ initialTodos, initialStats, userEmail }: Props) {
-  const [todos,       setTodos]       = useState<Todo[]>(initialTodos);
-  const [sharedTodos, setSharedTodos] = useState<SharedTodoView[]>([]);
-  const [subtaskMap,  setSubtaskMap]  = useState<Record<string, Subtask[]>>({});
-  const [filter,      setFilter]      = useState<FilterStatus>('all');
-  const [stats,       setStats]       = useState<UserStats>(initialStats ?? DEFAULT_STATS);
-  const [toast,       setToast]       = useState<Toast | null>(null);
+  const [todos,        setTodos]        = useState<Todo[]>(initialTodos);
+  const [sharedTodos,  setSharedTodos]  = useState<SharedTodoView[]>([]);
+  const [subtaskMap,   setSubtaskMap]   = useState<Record<string, Subtask[]>>({});
+  const [filter,       setFilter]       = useState<FilterStatus>('all');
+  const [stats,        setStats]        = useState<UserStats>(initialStats ?? DEFAULT_STATS);
+  const [toast,        setToast]        = useState<Toast | null>(null);
+  const [search,       setSearch]       = useState('');
+  const [focusedTodo,  setFocusedTodo]  = useState<Todo | null>(null);
   const router = useRouter();
 
-  // Fetch todos shared with this user
+  // Fetch shared todos on mount
   useEffect(() => {
     fetch('/api/todos/shared')
       .then((r) => r.ok ? r.json() : [])
@@ -47,18 +60,22 @@ export default function TodoApp({ initialTodos, initialStats, userEmail }: Props
 
   const today = new Date().toISOString().split('T')[0];
 
+  // Filter by tab + search query
   const filteredTodos = todos.filter((t) => {
-    if (filter === 'active') return !t.completed;
-    if (filter === 'completed') return t.completed;
-    if (filter === 'today') return !t.completed && t.deadline !== null && t.deadline <= today;
-    return true;
+    const matchesFilter =
+      filter === 'active'    ? !t.completed :
+      filter === 'completed' ? t.completed :
+      filter === 'today'     ? !t.completed && t.deadline !== null && t.deadline <= today :
+      true;
+    const matchesSearch = !search || t.text.toLowerCase().includes(search.toLowerCase());
+    return matchesFilter && matchesSearch;
   });
 
   const counts = {
-    all: todos.length,
-    active: todos.filter((t) => !t.completed).length,
+    all:       todos.length,
+    active:    todos.filter((t) => !t.completed).length,
     completed: todos.filter((t) => t.completed).length,
-    today: todos.filter((t) => !t.completed && t.deadline !== null && t.deadline <= today).length,
+    today:     todos.filter((t) => !t.completed && t.deadline !== null && t.deadline <= today).length,
   };
 
   // ── Sign out ──
@@ -70,11 +87,11 @@ export default function TodoApp({ initialTodos, initialStats, userEmail }: Props
   }
 
   // ── CRUD ──
-  const addTodo = useCallback(async (text: string, deadline: string | null, priority: Priority) => {
+  const addTodo = useCallback(async (text: string, deadline: string | null, priority: Priority, recurrence: Recurrence) => {
     const res = await fetch('/api/todos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, deadline, priority }),
+      body: JSON.stringify({ text, deadline, priority, recurrence }),
     });
     if (!res.ok) return;
     const newTodo: Todo = await res.json();
@@ -102,10 +119,10 @@ export default function TodoApp({ initialTodos, initialStats, userEmail }: Props
       return;
     }
 
-    // Award XP when marking complete
     if (completed) {
       const todo = todos.find((t) => t.id === id);
       if (todo) {
+        // Award XP
         const rewardRes = await fetch('/api/stats/complete', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -121,6 +138,26 @@ export default function TodoApp({ initialTodos, initialStats, userEmail }: Props
             badges: [...prev.badges, ...reward.newBadges.map((b) => b.id)],
           }));
           setToast({ xpGained: reward.xpGained, newBadges: reward.newBadges });
+        }
+
+        // Create next occurrence for recurring tasks
+        if (todo.recurrence && todo.recurrence !== 'none') {
+          const nextDeadline = getNextDeadline(todo);
+          const nextRes = await fetch('/api/todos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text: todo.text,
+              deadline: nextDeadline,
+              priority: todo.priority,
+              recurrence: todo.recurrence,
+              recurrence_days: todo.recurrence_days,
+            }),
+          });
+          if (nextRes.ok) {
+            const nextTodo: Todo = await nextRes.json();
+            setTodos((prev) => [nextTodo, ...prev]);
+          }
         }
       }
     }
@@ -184,6 +221,11 @@ export default function TodoApp({ initialTodos, initialStats, userEmail }: Props
     });
   }, []);
 
+  // When pomodoro completes, mark the task done
+  const handlePomodoroComplete = useCallback(async (todoId: string) => {
+    await toggleTodo(todoId, true);
+  }, [toggleTodo]);
+
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
       {/* Header */}
@@ -200,12 +242,25 @@ export default function TodoApp({ initialTodos, initialStats, userEmail }: Props
           <span className="font-semibold text-sm tracking-wide" style={{ color: 'var(--text-primary)' }}>Todos</span>
         </div>
 
-        {/* Stats in header */}
         <div className="flex-1 flex justify-center">
           <StatsBar stats={stats} />
         </div>
 
         <div className="flex items-center gap-3 flex-shrink-0">
+          {/* Analytics link */}
+          <button
+            onClick={() => router.push('/analytics')}
+            className="text-xs px-2.5 py-1.5 rounded-full transition-all hidden sm:flex items-center gap-1.5"
+            style={{ color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--border-focus)')}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+            title="Analytics"
+          >
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M1 10l3-4 2.5 2 2.5-5L12 10" />
+            </svg>
+            Stats
+          </button>
           <DarkModeToggle />
           {userEmail && (
             <span className="text-xs hidden sm:block" style={{ color: 'var(--text-muted)' }}>{userEmail}</span>
@@ -224,7 +279,7 @@ export default function TodoApp({ initialTodos, initialStats, userEmail }: Props
 
       {/* Main */}
       <main className="max-w-xl mx-auto px-4 pt-10 pb-20">
-        <div className="mb-8 animate-fade-up afd-1">
+        <div className="mb-6 animate-fade-up afd-1">
           <h1 className="text-4xl" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
             My Tasks
           </h1>
@@ -232,6 +287,15 @@ export default function TodoApp({ initialTodos, initialStats, userEmail }: Props
 
         <div className="animate-fade-up afd-2">
           <AddTodoForm onAdd={addTodo} />
+        </div>
+
+        {/* Search */}
+        <div className="animate-fade-up afd-3">
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            resultCount={search ? filteredTodos.length : undefined}
+          />
         </div>
 
         <div className="animate-fade-up afd-3">
@@ -250,10 +314,11 @@ export default function TodoApp({ initialTodos, initialStats, userEmail }: Props
             onNotesChange={updateNotes}
             onSubtasksChange={updateSubtasks}
             onReorder={handleReorder}
+            onFocus={setFocusedTodo}
           />
         </div>
 
-        {/* ── Shared with me ── */}
+        {/* Shared with me */}
         {sharedTodos.length > 0 && (
           <div className="mt-10 animate-fade-up afd-5">
             <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>
@@ -280,6 +345,15 @@ export default function TodoApp({ initialTodos, initialStats, userEmail }: Props
           </div>
         )}
       </main>
+
+      {/* Pomodoro timer */}
+      {focusedTodo && (
+        <PomodoroTimer
+          todo={focusedTodo}
+          onClose={() => setFocusedTodo(null)}
+          onComplete={handlePomodoroComplete}
+        />
+      )}
 
       {/* Badge / XP toast */}
       {toast && (

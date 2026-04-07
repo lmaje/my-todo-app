@@ -1,4 +1,5 @@
 export type Priority = 'high' | 'medium' | 'low';
+export type Recurrence = 'none' | 'daily' | 'weekly' | 'monthly';
 
 export interface Subtask {
   id: string;
@@ -42,6 +43,8 @@ export interface Todo {
   sort_order: number;
   notes: string | null;
   created_at: string;
+  recurrence: Recurrence;
+  recurrence_days: number[];
 }
 
 export type FilterStatus = 'all' | 'active' | 'completed' | 'today';
@@ -55,6 +58,8 @@ export interface CreateTodoPayload {
   text: string;
   deadline?: string | null;
   priority?: Priority;
+  recurrence?: Recurrence;
+  recurrence_days?: number[];
 }
 
 export interface UpdateTodoPayload {

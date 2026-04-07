@@ -28,12 +28,13 @@ interface Props {
   onNotesChange: (id: string, notes: string | null) => Promise<void>;
   onSubtasksChange: (todoId: string, subtasks: Subtask[]) => void;
   onReorder: (activeId: string, overId: string) => void;
+  onFocus?: (todo: Todo) => void;
 }
 
 export default function TodoList({
   todos, subtaskMap,
   onToggle, onDelete, onEdit, onDeadlineChange,
-  onPriorityChange, onNotesChange, onSubtasksChange, onReorder,
+  onPriorityChange, onNotesChange, onSubtasksChange, onReorder, onFocus,
 }: Props) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -69,6 +70,7 @@ export default function TodoList({
               onPriorityChange={onPriorityChange}
               onNotesChange={onNotesChange}
               onSubtasksChange={onSubtasksChange}
+              onFocus={onFocus}
             />
           ))}
         </ul>

@@ -18,6 +18,7 @@ interface Props {
   onPriorityChange: (id: string, priority: Priority) => Promise<void>;
   onNotesChange: (id: string, notes: string | null) => Promise<void>;
   onSubtasksChange: (todoId: string, subtasks: Subtask[]) => void;
+  onFocus?: (todo: Todo) => void;
   // Shared-todo props (set when this item is from another user's list)
   isShared?: boolean;
   sharedByEmail?: string;
@@ -77,7 +78,7 @@ function downloadIcs(todo: Todo) {
 export default function TodoItem({
   todo, subtasks, onToggle, onDelete, onEdit,
   onDeadlineChange, onPriorityChange, onNotesChange, onSubtasksChange,
-  isShared = false, sharedByEmail,
+  onFocus, isShared = false, sharedByEmail,
 }: Props) {
   const [isEditing,        setIsEditing]        = useState(false);
   const [editText,         setEditText]          = useState(todo.text);
@@ -396,6 +397,31 @@ export default function TodoItem({
                     <span className="text-[10px]">{subtasks.filter((s) => s.completed).length}/{subtasks.length}</span>
                   )}
                 </button>
+
+                {/* Recurrence badge */}
+                {!isShared && todo.recurrence && todo.recurrence !== 'none' && (
+                  <span
+                    className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                    style={{ background: 'var(--accent-subtle)', color: 'var(--accent)', border: '1px solid var(--border-focus)' }}
+                  >
+                    ↻ {todo.recurrence}
+                  </span>
+                )}
+
+                {/* Focus button — own incomplete todos only */}
+                {!isShared && !todo.completed && onFocus && (
+                  <button
+                    onClick={() => onFocus(todo)}
+                    className="flex items-center gap-1 text-[11px] transition-all hover:opacity-80"
+                    style={{ color: 'var(--text-muted)' }}
+                    title="Start focus timer"
+                  >
+                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                      <circle cx="6" cy="6" r="4.5" />
+                      <path strokeLinecap="round" d="M6 3.5V6l1.5 1.5" />
+                    </svg>
+                  </button>
+                )}
 
                 {/* Share button — own todos only */}
                 {!isShared && (

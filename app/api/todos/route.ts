@@ -39,6 +39,8 @@ export async function POST(request: Request) {
       deadline: body.deadline ?? null,
       priority: body.priority ?? 'medium',
       sort_order: minOrder - 1,
+      recurrence: body.recurrence ?? 'none',
+      recurrence_days: body.recurrence_days ?? [],
     })
     .select()
     .single();
