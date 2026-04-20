@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAuthServerClient } from '@/lib/supabase-server';
 
-// GET /api/todos/shared  — todos that other users have shared with the current user
 export async function GET() {
   const supabase = await createAuthServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -20,16 +19,16 @@ export async function GET() {
 
   const [{ data: todos }, { data: owners }] = await Promise.all([
     supabase.from('todos').select('*').in('id', todoIds),
-    supabase.from('user_lookup').select('id, email').in('id', ownerIds),
+    supabase.rpc('get_emails_by_user_ids', { p_ids: ownerIds }),
   ]);
 
-  const emailMap   = Object.fromEntries((owners ?? []).map((u) => [u.id, u.email]));
+  const emailMap    = Object.fromEntries((owners ?? []).map((u: { id: string; email: string }) => [u.id, u.email]));
   const shareByTodo = Object.fromEntries(shares.map((s) => [s.todo_id, s]));
 
   return NextResponse.json(
     (todos ?? []).map((t) => ({
       ...t,
-      share_id:       shareByTodo[t.id]?.id ?? '',
+      share_id:        shareByTodo[t.id]?.id ?? '',
       shared_by_email: emailMap[shareByTodo[t.id]?.owner_id] ?? '',
     }))
   );

@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase';
+import { createAuthServerClient } from '@/lib/supabase-server';
 import type { CreateTodoPayload } from '@/lib/types';
 
 export async function GET() {
-  const supabase = createServerClient();
+  const supabase = await createAuthServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const { data, error } = await supabase
     .from('todos')
     .select('*')
+    .eq('user_id', user.id)
     .order('sort_order', { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -14,18 +18,19 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const supabase = createServerClient();
-  const body: CreateTodoPayload = await request.json();
+  const supabase = await createAuthServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  const body: CreateTodoPayload = await request.json();
   if (!body.text?.trim()) {
     return NextResponse.json({ error: 'Text is required' }, { status: 400 });
   }
 
-  // Put new todo at top (sort_order = 0, shift others)
-  // Simpler: use a large negative to prepend, or just set 0 and rely on created_at
   const { data: existing } = await supabase
     .from('todos')
     .select('sort_order')
+    .eq('user_id', user.id)
     .order('sort_order', { ascending: true })
     .limit(1);
 
@@ -34,12 +39,13 @@ export async function POST(request: Request) {
   const { data, error } = await supabase
     .from('todos')
     .insert({
-      text: body.text.trim(),
-      completed: false,
-      deadline: body.deadline ?? null,
-      priority: body.priority ?? 'medium',
-      sort_order: minOrder - 1,
-      recurrence: body.recurrence ?? 'none',
+      user_id:         user.id,
+      text:            body.text.trim(),
+      completed:       false,
+      deadline:        body.deadline ?? null,
+      priority:        body.priority ?? 'medium',
+      sort_order:      minOrder - 1,
+      recurrence:      body.recurrence ?? 'none',
       recurrence_days: body.recurrence_days ?? [],
     })
     .select()
